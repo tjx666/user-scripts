@@ -1,8 +1,10 @@
 # Users Scripts
 
-自用的一些油猴脚本：
+自用的一些油猴脚本
 
-| 脚本                                | 从 GIthub 安装           | 从 GreasyFork 安装       |
+## 脚本列表
+
+| 脚本名                              | 从 GIthub 安装           | 从 GreasyFork 安装       |
 | ----------------------------------- | ------------------------ | ------------------------ |
 | [屏蔽 Boss 直聘猎头岗位][bh-github] | [Install][bh-github-raw] | [Install][bh-greasyfork] |
 |                                     |                          |                          |

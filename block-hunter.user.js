@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name         屏蔽 Boss 直聘猎头岗位
 // @namespace    http://tampermonkey.net/
-// @version      2024-03-13
+// @version      0.0.1
 // @description  boos 上现在猎头的的岗位太多了，直接屏蔽所有猎头的岗位
-// @author       You
+// @author       YuTengjing
+// @supportURL   https://github.com/tjx666/user-scripts/issues
+// @homepage     https://github.com/tjx666/user-scripts
 // @match        https://www.zhipin.com/web/geek/job*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=zhipin.com
 // @grant        none
