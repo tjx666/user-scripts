@@ -18,10 +18,10 @@
         });
     }
 
-    async function waitElement(selector) {
+    async function waitElement(selector, delay = 50) {
         let element = document.querySelector(selector);
         while (element === null) {
-            await sleep(50);
+            await sleep(delay);
             element = document.querySelector(selector);
         }
         return element;
@@ -45,13 +45,15 @@
         if (searchResultDiv) {
             const observer = new MutationObserver((mutationsList) => {
                 for (const mutation of mutationsList) {
-                    if (
-                        mutation.type === 'childList' &&
-                        mutation.addedNodes[0] &&
-                        mutation.addedNodes[0].nodeName === 'UL' &&
-                        mutation.addedNodes[0].matches('.job-list-box')
-                    ) {
-                        update();
+                    if (mutation.type === 'childList') {
+                        const firstAddNode = mutation.addedNodes[0];
+                        if (
+                            firstAddNode &&
+                            firstAddNode.nodeName === 'UL' &&
+                            firstAddNode.matches('.job-list-box')
+                        ) {
+                            update();
+                        }
                     }
                 }
             });
