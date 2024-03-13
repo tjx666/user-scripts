@@ -19,12 +19,15 @@
     }
 
     async function waitElement(selector) {
-        while (document.querySelector(selector) === null) {
+        let element = document.querySelector(selector);
+        while (element === null) {
             await sleep(50);
+            element = document.querySelector(selector);
         }
+        return element;
     }
 
-    (async function main() {
+    async function update() {
         await waitElement('.job-list-box');
         const jobCards = document.querySelectorAll('.job-card-wrapper');
         jobCards.forEach((card) => {
@@ -33,5 +36,26 @@
                 card.remove();
             }
         });
+    }
+
+    (async function main() {
+        await update();
+
+        const searchResultDiv = document.querySelector('.search-job-result');
+        if (searchResultDiv) {
+            const observer = new MutationObserver((mutationsList) => {
+                for (const mutation of mutationsList) {
+                    if (
+                        mutation.type === 'childList' &&
+                        mutation.addedNodes[0] &&
+                        mutation.addedNodes[0].nodeName === 'UL' &&
+                        mutation.addedNodes[0].matches('.job-list-box')
+                    ) {
+                        update();
+                    }
+                }
+            });
+            observer.observe(searchResultDiv, { childList: true });
+        }
     })();
 })();
