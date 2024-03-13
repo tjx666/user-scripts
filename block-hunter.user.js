@@ -27,12 +27,13 @@
         return element;
     }
 
+    const blockTags = new Set(['猎头', '代招']);
     async function update() {
         await waitElement('.job-list-box');
         const jobCards = document.querySelectorAll('.job-card-wrapper');
         jobCards.forEach((card) => {
             const hunterIcon = card.querySelector('img.job-tag-icon');
-            if (hunterIcon?.alt === '猎头') {
+            if (blockTags.has(hunterIcon?.alt)) {
                 card.remove();
             }
         });
