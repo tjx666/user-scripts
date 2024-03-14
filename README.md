@@ -14,7 +14,7 @@
 [bh-greasyfork]: https://greasyfork.org/zh-CN/scripts/489722-%E5%B1%8F%E8%94%BD-boss-%E7%9B%B4%E8%81%98%E7%8C%8E%E5%A4%B4%E5%B2%97%E4%BD%8D
 [rb-github]: https://github.com/tjx666/user-scripts/blob/main/refined-boss.user.js
 [rb-github-raw]: https://raw.githubusercontent.com/tjx666/user-scripts/main/refined-boss.user.js
-[rb-greasyfork]: https://greasyfork.org/zh-CN/scripts/489722-%E5%B1%8F%E8%94%BD-boss-%E7%9B%B4%E8%81%98%E7%8C%8E%E5%A4%B4%E5%B2%97%E4%BD%8D
+[rb-greasyfork]: https://greasyfork.org/zh-CN/scripts/489794-%E9%87%8D%E6%96%B0%E5%AE%9A%E4%B9%89boss%E7%9B%B4%E8%81%98
 
 ## 致谢
 
