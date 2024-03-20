@@ -112,6 +112,10 @@
                 const job = jobMap.get(jobId);
                 if (!job) continue;
 
+                if(link.textContent.includes('继续沟通')){
+                    link.parentNode.parentNode.remove();
+                    return;
+                }
                 const duration = now - job.lastModifyTime;
                 if (duration > month * 3) {
                     link.parentElement.parentElement.remove();
