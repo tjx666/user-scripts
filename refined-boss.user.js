@@ -114,7 +114,7 @@
 
                 if(link.textContent.includes('继续沟通')){
                     link.parentNode.parentNode.remove();
-                    return;
+                    continue;
                 }
                 const duration = now - job.lastModifyTime;
                 if (duration > month * 3) {
