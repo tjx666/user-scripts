@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         重新定义Boss直聘
 // @namespace    http://tampermonkey.net/
-// @version      0.0.0
-// @description  显示岗位最后修改时间，屏蔽不活跃岗位
+// @version      0.0.1
+// @description  显示岗位最后修改时间，屏蔽，已沟通过，不活跃岗位
 // @author       YuTengjing
 // @supportURL   https://github.com/tjx666/user-scripts/issues
 // @homepage     https://github.com/tjx666/user-scripts
@@ -50,10 +50,7 @@
     function getJobListUrls() {
         return window.performance
             .getEntries()
-            .filter(
-                (item) =>
-                      item.name.includes('/joblist.json?'),
-            )
+            .filter((item) => item.name.includes('/joblist.json?'))
             .map((item) => item.name);
     }
 
@@ -112,16 +109,20 @@
                 const job = jobMap.get(jobId);
                 if (!job) continue;
 
-                if(link.textContent.includes('继续沟通')){
+                // 屏蔽已沟通过的岗位
+                if (link.textContent.includes('继续沟通')) {
                     link.parentNode.parentNode.remove();
                     continue;
                 }
+
+                // 屏蔽不活跃岗位
                 const duration = now - job.lastModifyTime;
                 if (duration > month * 3) {
                     link.parentElement.parentElement.remove();
                     continue;
                 }
 
+                // 显示岗位最后修改时间
                 const jobTitle = link.querySelector('.job-title');
                 const modDateSpan = document.createElement('span');
                 modDateSpan.className = 'mod-date';
