@@ -52,7 +52,7 @@
             .getEntries()
             .filter(
                 (item) =>
-                    item.contentType === 'application/json' && item.name.includes('/joblist.json?'),
+                      item.name.includes('/joblist.json?'),
             )
             .map((item) => item.name);
     }
