@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         重新定义Boss直聘
 // @namespace    http://tampermonkey.net/
-// @version      0.0.2
+// @version      0.0.3
 // @description  显示岗位最后修改时间，屏蔽，已沟通过，不活跃岗位
 // @author       YuTengjing
 // @supportURL   https://github.com/tjx666/user-scripts/issues
@@ -18,6 +18,17 @@
         return new Promise((resolve) => {
             setTimeout(() => resolve(), ms);
         });
+    }
+
+    async function waitElements(selector, delay = 50) {
+        let elements;
+        while (true) {
+            elements = document.querySelectorAll(selector);
+            if (elements.length !== 0) {
+                return elements;
+            }
+            await sleep(delay);
+        }
     }
 
     const day = 1000 * 60 * 60 * 24;
@@ -47,11 +58,10 @@
         else return '#666';
     }
 
-    function getJobListUrls() {
+    function getFetchJobListBaseUrl() {
         return window.performance
             .getEntries()
-            .filter((item) => item.name.includes('/joblist.json?'))
-            .map((item) => item.name);
+            .filter((item) => item.name.includes('/joblist.json?'))[0]?.name;
     }
 
     /**
@@ -59,31 +69,52 @@
      */
     const listenUpdateJobList = (function () {
         const callbacks = [];
-        let lastUpdateKey = '';
+        let fetchJobListBaseUrl;
 
-        function checkUpdate() {
+        async function publishUpdate() {
             if (callbacks.length === 0) return;
 
-            const jobListUrls = getJobListUrls();
-            if (jobListUrls.length === 0) return;
-
-            if (jobListUrls.at(-1) !== jobListUrls.at(-2)) {
-                const updateKey = `${jobListUrls.at(-2)}->${jobListUrls.at(-1)}`;
-                if (updateKey !== lastUpdateKey) {
-                    (async function () {
-                        const resp = await fetch(jobListUrls.at(-1));
-                        const jobLists = (await resp.json()).zpData.jobList;
-                        callbacks.forEach((cb) => cb(jobLists));
-                    })();
-                }
-                lastUpdateKey = updateKey;
+            // location url params -> fetchJobListParams
+            const keyMap = {
+                areaBusiness: 'multiBusinessDistrict',
+            };
+            const baseUrlObj = new URL(fetchJobListBaseUrl);
+            const fetchJobListParams = baseUrlObj.searchParams;
+            const locationParams = new URLSearchParams(location.search);
+            for (const [key, value] of locationParams.entries()) {
+                fetchJobListParams.set(keyMap[key] ?? key, value);
             }
+
+            const fetchJobListUrl = baseUrlObj.toString();
+            const resp = await fetch(fetchJobListUrl);
+
+            const jobLists = (await resp.json()).zpData.jobList;
+            callbacks.forEach((cb) => cb(jobLists));
         }
 
-        (async function () {
+        (async function pollBaseFetchJobListUrl() {
             while (true) {
-                checkUpdate();
-                await sleep(100);
+                fetchJobListBaseUrl = getFetchJobListBaseUrl();
+                if (fetchJobListBaseUrl) {
+                    publishUpdate();
+
+                    // monitor location url change
+                    let lastUrl = location.href;
+                    (async function () {
+                        while (true) {
+                            const currentUrl = location.href;
+                            if (currentUrl !== lastUrl) {
+                                publishUpdate();
+                                lastUrl = currentUrl;
+                            }
+                            await sleep(100);
+                        }
+                    })();
+
+                    return;
+                }
+
+                await sleep(32);
             }
         })();
 
@@ -92,18 +123,18 @@
          */
         return function (callback) {
             callbacks.push(callback);
-            checkUpdate();
         };
     })();
 
     async function main() {
-        listenUpdateJobList((jobList) => {
+        listenUpdateJobList(async (jobList) => {
             const now = Date.now();
             const jobMap = jobList.reduce((map, cur) => {
                 map.set(cur.encryptJobId, cur);
                 return map;
             }, new Map());
-            const jobCardLinks = document.querySelectorAll('a.job-card-left');
+            const jobCardLinks = await waitElements('a.job-card-left');
+
             for (const link of jobCardLinks) {
                 const jobId = link.href.match(/job_detail\/(.*?)\.html/)?.[1];
                 const job = jobMap.get(jobId);
