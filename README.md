@@ -7,7 +7,7 @@
 | 脚本名                              | 描述                                                                           | 从 GIthub 安装           | 从 GreasyFork 安装       |
 | ----------------------------------- | ------------------------------------------------------------------------------ | ------------------------ | ------------------------ |
 | [屏蔽 Boss 直聘猎头岗位][bh-github] | 可以在`隐私保护` -> `屏蔽职位`里面设置不显示猎头岗位，但是有时候发现设置不生效 | [Install][bh-github-raw] | [Install][bh-greasyfork] |
-| [重新定义 Boss 直聘][rb-github]     | 显示岗位最后修改时间，屏蔽已沟通过，不活跃的岗位                               | [Install][rb-github-raw] | [Install][rb-greasyfork] |
+| [重新定义 Boss 直聘][rb-github]     | 显示岗位最后修改时间，屏蔽已沟通过，不活跃的, 以及外包岗位                     | [Install][rb-github-raw] | [Install][rb-greasyfork] |
 
 [bh-github]: https://github.com/tjx666/user-scripts/blob/main/block-hunter.user.js
 [bh-github-raw]: https://raw.githubusercontent.com/tjx666/user-scripts/main/block-hunter.user.js

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         重新定义Boss直聘
 // @namespace    http://tampermonkey.net/
-// @version      0.0.1
+// @version      0.0.2
 // @description  显示岗位最后修改时间，屏蔽，已沟通过，不活跃岗位
 // @author       YuTengjing
 // @supportURL   https://github.com/tjx666/user-scripts/issues
@@ -118,6 +118,13 @@
                 // 屏蔽不活跃岗位
                 const duration = now - job.lastModifyTime;
                 if (duration > month * 3) {
+                    link.parentElement.parentElement.remove();
+                    continue;
+                }
+
+                // 屏蔽外包岗位
+                const outsourcingKeywords = ['外包', '外派'];
+                if (outsourcingKeywords.some((keyword) => job.jobName.includes(keyword))) {
                     link.parentElement.parentElement.remove();
                     continue;
                 }
