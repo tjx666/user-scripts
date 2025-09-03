@@ -147,7 +147,7 @@ function injectHideTranslationCSS() {
             border: none !important;
             color: var(--fgColor-muted, #656d76) !important;
             cursor: pointer !important;
-            padding: 6px !important;
+            padding: 0 6px !important;
             border-radius: 6px !important;
             display: inline-flex !important;
             align-items: center !important;
@@ -155,6 +155,12 @@ function injectHideTranslationCSS() {
             font-size: 12px !important;
             line-height: 1 !important;
             transition: background-color 0.2s ease !important;
+        }
+        
+        /* Remove padding from toggle button specifically */
+        .refined-github-comments-toggle.timeline-comment-action {
+            padding: 0 6px !important;
+            margin: 0 !important;
         }
         
         .refined-github-comments-action-btn:hover {
@@ -385,6 +391,9 @@ function minimizeReactComment(reactComment) {
 
         // Hide comment content
         commentContent.style.display = 'none';
+        
+        // Remove border bottom from header
+        header.style.borderBottom = 'none';
 
         // Hide mention buttons
         toggleMentionButtons(reactComment, false);
@@ -409,11 +418,13 @@ function minimizeReactComment(reactComment) {
         const toggleBtn = toggleComment((isShow) => {
             if (isShow) {
                 commentContent.style.display = '';
+                header.style.borderBottom = '';
                 if (excerpt) excerpt.style.display = 'none';
                 toggleMentionButtons(reactComment, true);
                 reactComment.classList.remove('refined-github-comments-minimized');
             } else {
                 commentContent.style.display = 'none';
+                header.style.borderBottom = 'none';
                 if (excerpt) excerpt.style.display = '';
                 toggleMentionButtons(reactComment, false);
                 reactComment.classList.add('refined-github-comments-minimized');
