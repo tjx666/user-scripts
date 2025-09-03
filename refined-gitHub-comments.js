@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/bluwy/refined-github-comments
 // @supportURL   https://github.com/bluwy/refined-github-comments
 // @namespace    https://greasyfork.org/en/scripts/465056-refined-github-comments
-// @version      0.2.2
+// @version      0.2.3
 // @description  Remove clutter in the comments view
 // @author       Bjorn Lu
 // @match        https://github.com/**
@@ -24,6 +24,7 @@ const authorsToMinimize = [
     'codecov',
     'astrobot-houston',
     'codspeed-hq',
+    'lobehubbot',
 ];
 
 // common comments that don't really add value
@@ -31,7 +32,25 @@ const commentMatchToMinimize = [
     /^![a-z]/, // commands that start with !
     /^\/[a-z]/, // commands that start with /
     /^> root@0.0.0/, // astro preview release bot
+    /^👍[\s\S]*Thank you for raising your pull request/, // lobehubbot PR thanks
+    /^👀[\s\S]*Thank you for raising an issue/, // lobehubbot issue thanks
+    /^✅[\s\S]*This issue is closed/, // lobehubbot issue closed
+    /^❤️[\s\S]*Great PR/, // lobehubbot PR merged thanks
+    /Bot detected the issue body's language is not English/, // lobehubbot translation
 ];
+
+// DOM selectors
+const SELECTORS = {
+    TIMELINE_ELEMENT: '.LayoutHelpers-module__timelineElement--IsjVR, [data-wrapper-timeline-id]',
+    COMMENT_BODY: '[data-testid="markdown-body"] .markdown-body, .IssueCommentViewer-module__IssueCommentBody--xvkt3 .markdown-body',
+    COMMENT_CONTENT: '.IssueCommentViewer-module__IssueCommentBody--xvkt3, [data-testid="markdown-body"]',
+    COMMENT_HEADER: '[data-testid="comment-header"]',
+    AUTHOR_LINK: '.ActivityHeader-module__AuthorLink--D7Ojk, [data-testid="avatar-link"]',
+    COMMENT_ACTIONS: '[data-testid="comment-header-hamburger"], .CommentActions-module__CommentActionsIconButton--EOXv7',
+    TITLE_CONTAINER: '.ActivityHeader-module__TitleContainer--pa99A',
+    FOOTER_CONTAINER: '.ActivityHeader-module__footer--ssKOW, .ActivityHeader-module__FooterContainer--FHEpM',
+    ACTIONS_CONTAINER: '.ActivityHeader-module__ActionsButtonsContainer--L7GUK'
+};
 
 // #endregion
 
@@ -44,6 +63,7 @@ const maxParentThreadHeight = 185;
 (function () {
     'use strict';
 
+    console.log('[Refined GitHub Comments] Script loaded and starting...');
     run();
 
     // listen to github page loaded event
@@ -52,19 +72,131 @@ const maxParentThreadHeight = 185;
 })();
 
 function run() {
-    // Comments view
-    const allTimelineItem = document.querySelectorAll('.js-timeline-item');
-    const seenComments = [];
+    console.log('[Refined GitHub Comments] Running on:', location.href);
+    injectHideTranslationCSS();
 
-    allTimelineItem.forEach((timelineItem) => {
-        minimizeComment(timelineItem);
-        minimizeBlockquote(timelineItem, seenComments);
+    setTimeout(() => {
+        // Handle legacy GitHub comments
+        const allTimelineItem = document.querySelectorAll('.js-timeline-item');
+        console.log('[Refined GitHub Comments] Found', allTimelineItem.length, 'legacy timeline items (.js-timeline-item)');
+        const seenComments = [];
+        allTimelineItem.forEach((timelineItem) => {
+            minimizeComment(timelineItem);
+            minimizeBlockquote(timelineItem, seenComments);
+        });
+
+        // Handle React version comments
+        const reactComments = document.querySelectorAll('.react-issue-comment');
+        console.log('[Refined GitHub Comments] Found', reactComments.length, 'React comments (.react-issue-comment)');
+        reactComments.forEach((comment) => {
+            minimizeReactComment(comment);
+        });
+
+        // Discussion threads view
+        if (location.pathname.includes('/discussions/')) {
+            minimizeDiscussionThread();
+        }
+
+        setupDOMObserver();
+    }, 1000);
+}
+
+// #endregion
+
+// #region CSS Injection & DOM Observer
+
+function injectHideTranslationCSS() {
+    // Remove existing style if any
+    const existingStyle = document.getElementById('refined-github-comments-style');
+    if (existingStyle) {
+        existingStyle.remove();
+    }
+
+    const style = document.createElement('style');
+    style.id = 'refined-github-comments-style';
+    style.textContent = `
+        
+        /* Force title and footer in same line for minimized comments only */
+        .refined-github-comments-minimized .ActivityHeader-module__CommentHeaderContentContainer--OOrIN {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            gap: 8px !important;
+        }
+        
+        /* Ensure footer container can expand for minimized comments */
+        .refined-github-comments-minimized .ActivityHeader-module__FooterContainer--FHEpM {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            flex: 1 !important;
+        }
+        
+        /* Prevent excerpt text from wrapping */
+        .refined-github-comments-minimized .ActivityHeader-module__FooterContainer--FHEpM .color-fg-muted {
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: 300px !important;
+        }
+        
+        /* Style for action buttons */
+        .refined-github-comments-action-btn {
+            background: transparent !important;
+            border: none !important;
+            color: var(--fgColor-muted, #656d76) !important;
+            cursor: pointer !important;
+            padding: 6px !important;
+            border-radius: 6px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 12px !important;
+            line-height: 1 !important;
+            transition: background-color 0.2s ease !important;
+        }
+        
+        .refined-github-comments-action-btn:hover {
+            background-color: var(--control-transparent-bgColor-hover, rgba(175, 184, 193, 0.2)) !important;
+            color: var(--fgColor-default, #1f2328) !important;
+        }
+        
+        .refined-github-comments-action-btn:active {
+            background-color: var(--control-transparent-bgColor-active, rgba(175, 184, 193, 0.3)) !important;
+        }
+        
+        /* Force hide elements */
+        .refined-github-comments-hidden {
+            display: none !important;
+        }
+    `;
+
+    document.head.appendChild(style);
+}
+
+function setupDOMObserver() {
+    const observer = new MutationObserver((mutations) => {
+        const hasNewComments = mutations.some(mutation => 
+            mutation.type === 'childList' && 
+            Array.from(mutation.addedNodes).some(node => 
+                node.nodeType === Node.ELEMENT_NODE && (
+                    node.classList?.contains('react-issue-comment') ||
+                    node.querySelector?.('.react-issue-comment')
+                )
+            )
+        );
+
+        if (hasNewComments) {
+            setTimeout(() => {
+                document.querySelectorAll('.react-issue-comment').forEach(comment => {
+                    minimizeReactComment(comment);
+                });
+            }, 500);
+        }
     });
 
-    // Discussion threads view
-    if (location.pathname.includes('/discussions/')) {
-        minimizeDiscussionThread();
-    }
+    observer.observe(document.body, { childList: true, subtree: true });
 }
 
 // #endregion
@@ -77,37 +209,81 @@ function run() {
  * @param {HTMLElement} timelineItem
  */
 function minimizeComment(timelineItem) {
+    console.log('[Refined GitHub Comments] Processing legacy comment');
+    
     // things can happen twice in github for some reason
-    if (timelineItem.querySelector('.refined-github-comments-toggle')) return;
+    if (timelineItem.querySelector('.refined-github-comments-toggle')) {
+        console.log('[Refined GitHub Comments] Comment already processed, skipping');
+        return;
+    }
 
     const header = timelineItem.querySelector('.timeline-comment-header');
-    if (!header) return;
+    if (!header) {
+        console.log('[Refined GitHub Comments] ❌ Timeline comment header not found');
+        return;
+    }
 
     const headerName = header.querySelector('a.author');
-    if (!headerName) return;
+    if (!headerName) {
+        console.log('[Refined GitHub Comments] ❌ Author link not found');
+        return;
+    }
 
     const commentBody = timelineItem.querySelector('.comment-body');
-    if (!commentBody) return;
+    if (!commentBody) {
+        console.log('[Refined GitHub Comments] ❌ Comment body not found');
+        return;
+    }
 
     const commentBodyText = commentBody.innerText.trim();
 
+    // Get author name from href (e.g., "/lobehubbot" -> "lobehubbot")
+    const authorName = headerName.getAttribute('href')?.replace('/', '') || headerName.innerText.trim();
+    
+    console.log('[Refined GitHub Comments] Author detected:', authorName);
+    console.log('[Refined GitHub Comments] Author href:', headerName.getAttribute('href'));
+    console.log('[Refined GitHub Comments] Author innerText:', headerName.innerText.trim());
+    console.log('[Refined GitHub Comments] Comment text preview:', commentBodyText.substring(0, 100) + '...');
+    
+    // Check minimization criteria
+    const shouldMinimizeByAuthor = authorsToMinimize.includes(authorName);
+    const matchingPattern = commentMatchToMinimize.find((match) => match.test(commentBodyText));
+    
+    console.log('[Refined GitHub Comments] Should minimize by author:', shouldMinimizeByAuthor);
+    console.log('[Refined GitHub Comments] Matching pattern found:', matchingPattern ? matchingPattern.toString() : 'none');
+
     // minimize the comment
-    if (
-        authorsToMinimize.includes(headerName.innerText) ||
-        commentMatchToMinimize.some((match) => match.test(commentBodyText))
-    ) {
+    if (shouldMinimizeByAuthor || matchingPattern) {
+        console.log('[Refined GitHub Comments] ✅ Comment should be minimized');
         const commentContent = timelineItem.querySelector('.edit-comment-hide');
-        if (!commentContent) return;
+        if (!commentContent) {
+            console.log('[Refined GitHub Comments] ❌ Comment content (.edit-comment-hide) not found');
+            return;
+        }
         const commentActions = timelineItem.querySelector('.timeline-comment-actions');
-        if (!commentActions) return;
-        const headerH3 = header.querySelector('h3');
-        if (!headerH3) return;
-        const headerDiv = headerH3.querySelector('div');
-        if (!headerDiv) return;
+        if (!commentActions) {
+            console.log('[Refined GitHub Comments] ❌ Comment actions (.timeline-comment-actions) not found');
+            return;
+        }
+        // Find the correct h3 containing the comment title (with author and time info)
+        const headerH3 = header.querySelector('h3.f5') || header.querySelector('h3');
+        if (!headerH3) {
+            console.log('[Refined GitHub Comments] ❌ Header h3 not found');
+            console.log('[Refined GitHub Comments] Header HTML:', header.outerHTML.substring(0, 500) + '...');
+            return;
+        }
+        
+        console.log('[Refined GitHub Comments] ✅ Found h3, innerHTML preview:', headerH3.innerHTML.substring(0, 100) + '...');
+        
+        // Try to find a div inside h3, if not found, use h3 directly for appending excerpt
+        let targetElement = headerH3.querySelector('div') || headerH3;
+        console.log('[Refined GitHub Comments] Target element for excerpt:', targetElement.tagName, 
+                   targetElement.className.substring(0, 50));
 
         // hide comment
         header.style.borderBottom = 'none';
         commentContent.style.display = 'none';
+        console.log('[Refined GitHub Comments] ✅ Hidden comment content');
 
         // add comment excerpt
         const excerpt = document.createElement('span');
@@ -118,7 +294,8 @@ function minimizeComment(timelineItem) {
         excerpt.innerHTML = commentBodyText.slice(0, 100);
         excerpt.style.opacity = '0.5';
         headerH3.classList.add('css-truncate', 'css-truncate-overflow');
-        headerDiv.appendChild(excerpt);
+        targetElement.appendChild(excerpt);
+        console.log('[Refined GitHub Comments] ✅ Added comment excerpt');
 
         // add toggle button
         const toggleBtn = toggleComment((isShow) => {
@@ -136,6 +313,126 @@ function minimizeComment(timelineItem) {
             }
         });
         commentActions.prepend(toggleBtn);
+        console.log('[Refined GitHub Comments] ✅ Added toggle button - Comment minimized successfully!');
+    } else {
+        console.log('[Refined GitHub Comments] ℹ️ Comment does not match minimization criteria');
+    }
+}
+
+/**
+ * Toggle mention buttons visibility
+ * @param {HTMLElement} reactComment
+ * @param {boolean} show
+ */
+function toggleMentionButtons(reactComment, show) {
+    const timelineElement = reactComment.closest(SELECTORS.TIMELINE_ELEMENT);
+    if (!timelineElement) return;
+    
+    const mentionContainer = timelineElement.querySelector('.avatar-parent-child');
+    if (!mentionContainer) return;
+    
+    const mentionBtns = mentionContainer.querySelectorAll('.rgh-quick-mention');
+    mentionBtns.forEach(btn => {
+        if (show) {
+            btn.classList.remove('refined-github-comments-hidden');
+        } else {
+            btn.classList.add('refined-github-comments-hidden');
+        }
+    });
+}
+
+/**
+ * Handle React version GitHub comments
+ * @param {HTMLElement} reactComment
+ */
+function minimizeReactComment(reactComment) {
+    // Skip if already processed
+    if (reactComment.querySelector('.refined-github-comments-toggle')) {
+        return;
+    }
+
+    // Find comment header
+    const header = reactComment.querySelector(SELECTORS.COMMENT_HEADER);
+    if (!header) return;
+
+    // Find author
+    const authorLink = header.querySelector(SELECTORS.AUTHOR_LINK);
+    if (!authorLink) return;
+
+    // Get author name
+    const authorName =
+        authorLink.getAttribute('href')?.replace('/', '') || authorLink.textContent.trim();
+
+    // Find comment body
+    const commentBody = reactComment.querySelector(SELECTORS.COMMENT_BODY);
+    if (!commentBody) return;
+
+    const commentBodyText = commentBody.innerText.trim();
+
+    // Check if should minimize
+    const shouldMinimizeByAuthor = authorsToMinimize.includes(authorName);
+    const matchingPattern = commentMatchToMinimize.find((match) => match.test(commentBodyText));
+
+    if (shouldMinimizeByAuthor || matchingPattern) {
+        const commentContent = reactComment.querySelector(SELECTORS.COMMENT_CONTENT);
+        if (!commentContent) return;
+
+        const commentActions = header.querySelector(SELECTORS.COMMENT_ACTIONS);
+        if (!commentActions) return;
+
+        const titleContainer = header.querySelector(SELECTORS.TITLE_CONTAINER);
+        if (!titleContainer) return;
+
+        // Hide comment content
+        commentContent.style.display = 'none';
+
+        // Hide mention buttons
+        toggleMentionButtons(reactComment, false);
+
+        // Add CSS class for layout styling
+        reactComment.classList.add('refined-github-comments-minimized');
+
+        // Add comment excerpt
+        const footerContainer = header.querySelector(SELECTORS.FOOTER_CONTAINER);
+        let excerpt = null;
+        if (footerContainer) {
+            excerpt = document.createElement('span');
+            excerpt.setAttribute('class', 'color-fg-muted text-italic');
+            excerpt.innerHTML = commentBodyText.slice(0, 100) + '...';
+            excerpt.style.opacity = '0.5';
+            excerpt.style.fontSize = '12px';
+            excerpt.style.marginLeft = '8px';
+            footerContainer.appendChild(excerpt);
+        }
+
+        // Add toggle button
+        const toggleBtn = toggleComment((isShow) => {
+            if (isShow) {
+                commentContent.style.display = '';
+                if (excerpt) excerpt.style.display = 'none';
+                toggleMentionButtons(reactComment, true);
+                reactComment.classList.remove('refined-github-comments-minimized');
+            } else {
+                commentContent.style.display = 'none';
+                if (excerpt) excerpt.style.display = '';
+                toggleMentionButtons(reactComment, false);
+                reactComment.classList.add('refined-github-comments-minimized');
+            }
+        });
+
+        // Find actions container
+        const actionsContainer = header.querySelector(SELECTORS.ACTIONS_CONTAINER);
+        if (!actionsContainer) return;
+        
+        // Ensure the container has proper flexbox styling
+        if (actionsContainer.style) {
+            actionsContainer.style.display = 'flex';
+            actionsContainer.style.alignItems = 'center';
+            actionsContainer.style.gap = '4px';
+        }
+
+        // Insert toggle button
+        actionsContainer.insertBefore(toggleBtn, commentActions);
     }
 }
 
