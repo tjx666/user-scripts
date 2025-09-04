@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/bluwy/refined-github-comments
 // @supportURL   https://github.com/bluwy/refined-github-comments
 // @namespace    https://greasyfork.org/en/scripts/465056-refined-github-comments
-// @version      0.3.1
+// @version      0.4.0
 // @description  Remove clutter in the comments view
 // @author       Bjorn Lu
 // @match        https://github.com/**
@@ -17,9 +17,9 @@ const authorsToMinimize = [
     'changeset-bot',
     'codeflowapp',
     'netlify',
-    'vercel',
+    // 'vercel',
     'pkg-pr-new',
-    'codecov',
+    // 'codecov',
     'astrobot-houston',
     'codspeed-hq',
     'lobehubbot',
@@ -64,7 +64,6 @@ const seenReactComments = [];
 (function () {
     'use strict';
 
-    console.log('[Refined GitHub Comments] Script loaded and starting...');
     run();
 
     // listen to github page loaded event
@@ -73,20 +72,20 @@ const seenReactComments = [];
 })();
 
 function run() {
-    console.log('[Refined GitHub Comments] Running on:', location.href);
-    injectHideTranslationCSS();
+    injectCSS();
 
     setTimeout(() => {
         // Handle React version comments
         const reactComments = document.querySelectorAll('.react-issue-comment');
-        console.log(
-            '[Refined GitHub Comments] Found',
-            reactComments.length,
-            'React comments (.react-issue-comment)',
-        );
         reactComments.forEach((comment) => {
             minimizeReactComment(comment);
             minimizeReactBlockquote(comment, seenReactComments);
+        });
+
+        // Handle PR comments
+        const timelineItems = document.querySelectorAll('.js-timeline-item');
+        timelineItems.forEach((timelineItem) => {
+            minimizePRComment(timelineItem);
         });
 
         // Discussion threads view
@@ -98,7 +97,7 @@ function run() {
     }, 1000);
 }
 
-function injectHideTranslationCSS() {
+function injectCSS() {
     // Remove existing style if any
     const existingStyle = document.getElementById('refined-github-comments-style');
     if (existingStyle) {
@@ -108,8 +107,7 @@ function injectHideTranslationCSS() {
     const style = document.createElement('style');
     style.id = 'refined-github-comments-style';
     style.textContent = `
-        
-        /* Force title and footer in same line for minimized comments only */
+        /* Layout for minimized React comments */
         .refined-github-comments-minimized .ActivityHeader-module__CommentHeaderContentContainer--OOrIN {
             display: flex !important;
             flex-direction: row !important;
@@ -118,7 +116,6 @@ function injectHideTranslationCSS() {
             gap: 8px !important;
         }
         
-        /* Ensure footer container can expand for minimized comments */
         .refined-github-comments-minimized .ActivityHeader-module__FooterContainer--FHEpM {
             display: flex !important;
             flex-direction: row !important;
@@ -126,16 +123,9 @@ function injectHideTranslationCSS() {
             flex: 1 !important;
         }
         
-        /* Prevent excerpt text from wrapping for React comments */
-        .refined-github-comments-minimized .ActivityHeader-module__FooterContainer--FHEpM .color-fg-muted {
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            max-width: 300px !important;
-        }
-        
-        /* Fix excerpt truncation for legacy comments */
-        .timeline-comment-header .css-truncate-overflow .text-fg-muted.text-italic {
+        /* Excerpt text styling */
+        .refined-github-comments-minimized .ActivityHeader-module__FooterContainer--FHEpM .color-fg-muted,
+        .timeline-comment-header .css-truncate-overflow {
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
@@ -143,38 +133,13 @@ function injectHideTranslationCSS() {
             display: inline-block !important;
         }
         
-        /* Style for action buttons */
-        .refined-github-comments-action-btn {
-            background: transparent !important;
-            border: none !important;
-            color: var(--fgColor-muted, #656d76) !important;
-            cursor: pointer !important;
-            padding: 0 6px !important;
-            border-radius: 6px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            font-size: 12px !important;
-            line-height: 1 !important;
-            transition: background-color 0.2s ease !important;
-        }
-        
-        /* Remove padding from toggle button specifically */
+        /* Toggle button styling */
         .refined-github-comments-toggle.timeline-comment-action {
             padding: 0 6px !important;
             margin: 0 !important;
         }
         
-        .refined-github-comments-action-btn:hover {
-            background-color: var(--control-transparent-bgColor-hover, rgba(175, 184, 193, 0.2)) !important;
-            color: var(--fgColor-default, #1f2328) !important;
-        }
-        
-        .refined-github-comments-action-btn:active {
-            background-color: var(--control-transparent-bgColor-active, rgba(175, 184, 193, 0.3)) !important;
-        }
-        
-        /* Force hide elements */
+        /* Hidden elements */
         .refined-github-comments-hidden {
             display: none !important;
         }
@@ -192,21 +157,193 @@ function setupDOMObserver() {
                     (node) =>
                         node.nodeType === Node.ELEMENT_NODE &&
                         (node.classList?.contains('react-issue-comment') ||
-                            node.querySelector?.('.react-issue-comment')),
+                            node.querySelector?.('.react-issue-comment') ||
+                            node.classList?.contains('js-timeline-item') ||
+                            node.querySelector?.('.js-timeline-item')),
                 ),
         );
 
         if (hasNewComments) {
             setTimeout(() => {
+                // Handle React comments
                 document.querySelectorAll('.react-issue-comment').forEach((comment) => {
                     minimizeReactComment(comment);
                     minimizeReactBlockquote(comment, seenReactComments);
+                });
+
+                // Handle PR comments
+                document.querySelectorAll('.js-timeline-item').forEach((timelineItem) => {
+                    minimizePRComment(timelineItem);
                 });
             }, 500);
         }
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
+}
+
+/**
+ * Extract author name from link
+ * @param {HTMLElement} authorLink
+ * @returns {string}
+ */
+function getAuthorName(authorLink) {
+    let authorName =
+        authorLink.getAttribute('href')?.replace('/', '') || authorLink.textContent.trim();
+    if (authorName.startsWith('apps/')) {
+        authorName = authorName.replace('apps/', '');
+    }
+    return authorName;
+}
+
+/**
+ * Check if comment should be minimized
+ * @param {string} authorName
+ * @param {string} commentText
+ * @returns {boolean}
+ */
+function shouldMinimizeComment(authorName, commentText) {
+    const shouldMinimizeByAuthor = authorsToMinimize.includes(authorName);
+    const matchingPattern = commentMatchToMinimize.find((match) => match.test(commentText));
+    return shouldMinimizeByAuthor || matchingPattern;
+}
+
+/**
+ * Create comment excerpt element
+ * @param {string} text
+ * @returns {HTMLElement}
+ */
+function createExcerpt(text) {
+    const excerpt = document.createElement('span');
+    excerpt.className = 'css-truncate-overflow text-fg-muted text-italic';
+    excerpt.style.marginLeft = '8px';
+    excerpt.style.fontSize = '12px';
+    excerpt.style.opacity = '0.6';
+    excerpt.style.whiteSpace = 'nowrap';
+    excerpt.style.overflow = 'hidden';
+    excerpt.style.textOverflow = 'ellipsis';
+    excerpt.style.maxWidth = '200px';
+    excerpt.style.display = 'inline-block';
+    excerpt.style.verticalAlign = 'middle';
+    excerpt.textContent = ' — ' + text.slice(0, 60) + (text.length > 60 ? '...' : '');
+    return excerpt;
+}
+
+/**
+ * Setup toggle button styling and placement
+ * @param {HTMLElement} commentActions
+ * @param {HTMLElement} toggleBtn
+ * @param {HTMLElement} beforeElement - Optional element to insert before
+ */
+function setupToggleButton(commentActions, toggleBtn, beforeElement = null) {
+    commentActions.style.display = 'flex';
+    commentActions.style.alignItems = 'center';
+    commentActions.style.gap = '4px';
+
+    if (beforeElement) {
+        commentActions.insertBefore(toggleBtn, beforeElement);
+    } else {
+        commentActions.insertBefore(toggleBtn, commentActions.firstChild);
+    }
+}
+
+/**
+ * Handle PR comments
+ * @param {HTMLElement} timelineItem
+ */
+function minimizePRComment(timelineItem) {
+    // Skip if already processed
+    if (timelineItem.querySelector('.refined-github-comments-toggle')) {
+        return;
+    }
+
+    // Find timeline comment
+    const timelineComment = timelineItem.querySelector('.timeline-comment');
+    if (!timelineComment) return;
+
+    // Find comment header
+    const header = timelineComment.querySelector('.timeline-comment-header');
+    if (!header) return;
+
+    // Find author in h3 strong a structure
+    const authorLink = header.querySelector('h3 strong .author');
+    if (!authorLink) return;
+
+    // Find comment body
+    const commentBody = timelineComment.querySelector(
+        '.comment-body.markdown-body.js-comment-body',
+    );
+    if (!commentBody) return;
+
+    const authorName = getAuthorName(authorLink);
+    const commentBodyText = commentBody.innerText.trim();
+
+    if (shouldMinimizeComment(authorName, commentBodyText)) {
+        // Find comment actions container
+        const commentActions = header.querySelector('.timeline-comment-actions');
+        if (!commentActions) return;
+
+        // Hide comment body content
+        const taskLists = timelineComment.querySelector('task-lists');
+        if (taskLists) {
+            taskLists.style.display = 'none';
+        } else {
+            const commentBody = timelineComment.querySelector('.comment-body');
+            if (commentBody) {
+                commentBody.style.display = 'none';
+            }
+        }
+
+        // Remove border bottom from header
+        header.style.borderBottom = 'none';
+
+        // Hide mention buttons
+        toggleMentionButtons(timelineItem, false);
+
+        // Add comment excerpt in header
+        const titleContainer = header.querySelector('h3.f5.text-normal');
+        if (titleContainer) {
+            // Find the div inside h3 to add excerpt there (keep it on same line)
+            const innerDiv = titleContainer.querySelector('div');
+            if (innerDiv) {
+                const excerpt = createExcerpt(commentBodyText);
+                innerDiv.appendChild(excerpt);
+            }
+
+            // Add toggle button
+            const toggleBtn = toggleComment((isShow) => {
+                const currentTaskLists = timelineComment.querySelector('task-lists');
+                const currentCommentBody = timelineComment.querySelector('.comment-body');
+
+                if (isShow) {
+                    if (currentTaskLists) {
+                        currentTaskLists.style.display = '';
+                    } else if (currentCommentBody) {
+                        currentCommentBody.style.display = '';
+                    }
+                    header.style.borderBottom = '';
+                    if (innerDiv && innerDiv.querySelector('.css-truncate-overflow')) {
+                        innerDiv.querySelector('.css-truncate-overflow').style.display = 'none';
+                    }
+                    toggleMentionButtons(timelineItem, true);
+                } else {
+                    if (currentTaskLists) {
+                        currentTaskLists.style.display = 'none';
+                    } else if (currentCommentBody) {
+                        currentCommentBody.style.display = 'none';
+                    }
+                    header.style.borderBottom = 'none';
+                    if (innerDiv && innerDiv.querySelector('.css-truncate-overflow')) {
+                        innerDiv.querySelector('.css-truncate-overflow').style.display = '';
+                    }
+                    toggleMentionButtons(timelineItem, false);
+                }
+            });
+
+            // Style and insert toggle button
+            setupToggleButton(commentActions, toggleBtn);
+        }
+    }
 }
 
 /**
@@ -249,24 +386,14 @@ function minimizeReactComment(reactComment) {
     const authorLink = header.querySelector(SELECTORS.AUTHOR_LINK);
     if (!authorLink) return;
 
-    // Get author name (handle GitHub Apps like /apps/changeset-bot)
-    let authorName =
-        authorLink.getAttribute('href')?.replace('/', '') || authorLink.textContent.trim();
-    if (authorName.startsWith('apps/')) {
-        authorName = authorName.replace('apps/', '');
-    }
-
     // Find comment body
     const commentBody = reactComment.querySelector(SELECTORS.COMMENT_BODY);
     if (!commentBody) return;
 
+    const authorName = getAuthorName(authorLink);
     const commentBodyText = commentBody.innerText.trim();
 
-    // Check if should minimize
-    const shouldMinimizeByAuthor = authorsToMinimize.includes(authorName);
-    const matchingPattern = commentMatchToMinimize.find((match) => match.test(commentBodyText));
-
-    if (shouldMinimizeByAuthor || matchingPattern) {
+    if (shouldMinimizeComment(authorName, commentBodyText)) {
         const commentContent = reactComment.querySelector(SELECTORS.COMMENT_CONTENT);
         if (!commentContent) return;
 
@@ -318,19 +445,11 @@ function minimizeReactComment(reactComment) {
             }
         });
 
-        // Find actions container
+        // Find actions container and setup toggle button
         const actionsContainer = header.querySelector(SELECTORS.ACTIONS_CONTAINER);
         if (!actionsContainer) return;
 
-        // Ensure the container has proper flexbox styling
-        if (actionsContainer.style) {
-            actionsContainer.style.display = 'flex';
-            actionsContainer.style.alignItems = 'center';
-            actionsContainer.style.gap = '4px';
-        }
-
-        // Insert toggle button
-        actionsContainer.insertBefore(toggleBtn, commentActions);
+        setupToggleButton(actionsContainer, toggleBtn, commentActions);
     }
 }
 
