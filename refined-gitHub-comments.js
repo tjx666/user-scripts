@@ -114,6 +114,7 @@ function injectCSS() {
             align-items: center !important;
             flex-wrap: nowrap !important;
             gap: 8px !important;
+            flex: 1 !important;
         }
         
         .refined-github-comments-minimized .ActivityHeader-module__FooterContainer--FHEpM {
@@ -121,6 +122,15 @@ function injectCSS() {
             flex-direction: row !important;
             align-items: center !important;
             flex: 1 !important;
+            overflow: hidden !important;
+        }
+        
+        .refined-github-comments-minimized .ActivityHeader-module__narrowViewportWrapper--k4ncm.ActivityHeader-module__ActionsContainer--Ebsux {
+            flex-grow: 0 !important;
+        }
+        
+        .refined-github-comments-minimized .ActivityHeader-module__HeaderMutedText--aJAo0 {
+            flex-shrink: 0 !important;
         }
         
         /* Excerpt text styling */
@@ -129,7 +139,6 @@ function injectCSS() {
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
-            max-width: 300px !important;
             display: inline-block !important;
         }
         
@@ -222,7 +231,6 @@ function createExcerpt(text) {
     excerpt.style.whiteSpace = 'nowrap';
     excerpt.style.overflow = 'hidden';
     excerpt.style.textOverflow = 'ellipsis';
-    excerpt.style.maxWidth = '200px';
     excerpt.style.display = 'inline-block';
     excerpt.style.verticalAlign = 'middle';
     excerpt.textContent = ' — ' + text.slice(0, 60) + (text.length > 60 ? '...' : '');
@@ -353,18 +361,44 @@ function minimizePRComment(timelineItem) {
  */
 function toggleMentionButtons(element, show) {
     let mentionContainer = null;
-    
-    // First try to find mention container directly within the element (for PR comments)
+
+    // Strategy 1: Find mention container directly within the element (for PR comments)
     mentionContainer = element.querySelector('.avatar-parent-child');
-    
-    // If not found, try the original approach for React comments
+
+    // Strategy 2: Find via closest timeline element (for React comments)
     if (!mentionContainer) {
         const timelineElement = element.closest(SELECTORS.TIMELINE_ELEMENT);
         if (timelineElement) {
             mentionContainer = timelineElement.querySelector('.avatar-parent-child');
         }
     }
-    
+
+    // Strategy 3: For issue comments, try to find timeline element as sibling container
+    if (!mentionContainer) {
+        // Look for timeline element that contains both avatar-parent-child and this element
+        const timelineElements = document.querySelectorAll(SELECTORS.TIMELINE_ELEMENT);
+        for (const timeline of timelineElements) {
+            if (timeline.contains(element) && timeline.querySelector('.avatar-parent-child')) {
+                mentionContainer = timeline.querySelector('.avatar-parent-child');
+                break;
+            }
+        }
+    }
+
+    // Strategy 4: Direct search for mention buttons in nearby containers
+    if (!mentionContainer) {
+        // Look for mention buttons in the document that might be related to this comment
+        const commentId = element.querySelector('[data-testid="comment-header"]')?.id;
+        if (commentId) {
+            const timelineWrapper = document.querySelector(
+                `[data-wrapper-timeline-id="${commentId}"]`,
+            );
+            if (timelineWrapper) {
+                mentionContainer = timelineWrapper.querySelector('.avatar-parent-child');
+            }
+        }
+    }
+
     if (!mentionContainer) return;
 
     const mentionBtns = mentionContainer.querySelectorAll('.rgh-quick-mention');
@@ -430,7 +464,7 @@ function minimizeReactComment(reactComment) {
         if (footerContainer) {
             excerpt = document.createElement('span');
             excerpt.setAttribute('class', 'color-fg-muted text-italic');
-            excerpt.innerHTML = commentBodyText.slice(0, 100) + '...';
+            excerpt.innerHTML = commentBodyText;
             excerpt.style.opacity = '0.5';
             excerpt.style.fontSize = '12px';
             excerpt.style.marginLeft = '8px';
