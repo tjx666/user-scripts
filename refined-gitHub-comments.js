@@ -348,14 +348,23 @@ function minimizePRComment(timelineItem) {
 
 /**
  * Toggle mention buttons visibility
- * @param {HTMLElement} reactComment
+ * @param {HTMLElement} element - Can be either a React comment or PR timeline item
  * @param {boolean} show
  */
-function toggleMentionButtons(reactComment, show) {
-    const timelineElement = reactComment.closest(SELECTORS.TIMELINE_ELEMENT);
-    if (!timelineElement) return;
-
-    const mentionContainer = timelineElement.querySelector('.avatar-parent-child');
+function toggleMentionButtons(element, show) {
+    let mentionContainer = null;
+    
+    // First try to find mention container directly within the element (for PR comments)
+    mentionContainer = element.querySelector('.avatar-parent-child');
+    
+    // If not found, try the original approach for React comments
+    if (!mentionContainer) {
+        const timelineElement = element.closest(SELECTORS.TIMELINE_ELEMENT);
+        if (timelineElement) {
+            mentionContainer = timelineElement.querySelector('.avatar-parent-child');
+        }
+    }
+    
     if (!mentionContainer) return;
 
     const mentionBtns = mentionContainer.querySelectorAll('.rgh-quick-mention');
