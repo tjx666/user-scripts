@@ -1,12 +1,12 @@
 // ==UserScript==
-// @name         Refined GitHub Comments
+// @name         Refined GitHub Comments (TJ)
 // @license      MIT
-// @homepageURL  https://github.com/bluwy/refined-github-comments
-// @supportURL   https://github.com/bluwy/refined-github-comments
+// @homepageURL  https://github.com/tjx666/user-scripts/blob/main/refined-gitHub-comments.js
+// @supportURL   https://github.com/tjx666/user-scripts/blob/main/refined-gitHub-comments.js
 // @namespace    https://greasyfork.org/en/scripts/465056-refined-github-comments
 // @version      0.4.0
 // @description  Remove clutter in the comments view
-// @author       Bjorn Lu
+// @author       YuTengjing
 // @match        https://github.com/**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=github.com
 // @grant        none
