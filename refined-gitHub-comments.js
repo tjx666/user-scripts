@@ -113,7 +113,7 @@ function injectCSS() {
             flex-direction: row !important;
             align-items: center !important;
             flex-wrap: nowrap !important;
-            gap: 8px !important;
+            gap: 4px !important;
             flex: 1 !important;
         }
         
@@ -225,7 +225,6 @@ function shouldMinimizeComment(authorName, commentText) {
 function createExcerpt(text) {
     const excerpt = document.createElement('span');
     excerpt.className = 'css-truncate-overflow text-fg-muted text-italic';
-    excerpt.style.marginLeft = '8px';
     excerpt.style.fontSize = '12px';
     excerpt.style.opacity = '0.6';
     excerpt.style.whiteSpace = 'nowrap';
@@ -233,7 +232,7 @@ function createExcerpt(text) {
     excerpt.style.textOverflow = 'ellipsis';
     excerpt.style.display = 'inline-block';
     excerpt.style.verticalAlign = 'middle';
-    excerpt.textContent = ' — ' + text.slice(0, 60) + (text.length > 60 ? '...' : '');
+    excerpt.textContent = text;
     return excerpt;
 }
 
@@ -315,6 +314,13 @@ function minimizePRComment(timelineItem) {
             const innerDiv = titleContainer.querySelector('div');
             if (innerDiv) {
                 const excerpt = createExcerpt(commentBodyText);
+
+                innerDiv.parentElement.style.overflow = 'hidden';
+                innerDiv.style.display = 'flex';
+                innerDiv.style.alignItems = 'center';
+                innerDiv.style.gap = '4px';
+                excerpt.style.flex = '1';
+
                 innerDiv.appendChild(excerpt);
             }
 
@@ -467,7 +473,7 @@ function minimizeReactComment(reactComment) {
             excerpt.innerHTML = commentBodyText;
             excerpt.style.opacity = '0.5';
             excerpt.style.fontSize = '12px';
-            excerpt.style.marginLeft = '8px';
+            excerpt.style.marginLeft = '4px';
             footerContainer.appendChild(excerpt);
         }
 
