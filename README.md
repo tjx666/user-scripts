@@ -8,8 +8,8 @@
 | --------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------- | ------------------------ |
 | [屏蔽 Boss 直聘猎头岗位][bh-github]           | 可以在`隐私保护` -> `屏蔽职位`里面设置不显示猎头岗位，但是有时候发现设置不生效 | [Install][bh-github-raw]  | [Install][bh-greasyfork] |
 | [重新定义 Boss 直聘][rb-github]               | 显示岗位最后修改时间，屏蔽已沟通过，不活跃的, 以及外包岗位                     | [Install][rb-github-raw]  | [Install][rb-greasyfork] |
-| [github-release-assets-recommend][gsr-github] | 基于用户平台（操作系统+架构）智能推荐 GitHub Release 文件，支持中英文自动切换   | [Install][gsr-github-raw] | 暂未发布                 |
-| [优化 GitHub 评论显示 (TJ)][rgc-github]       | 折叠机器人评论和重复内容，清理评论视图杂乱信息。基于 [bluwy][bluwy-original]   | [Install][rgc-github-raw] | 暂未发布                 |
+| [github-release-assets-recommend][grar-github] | 基于用户平台（操作系统+架构）智能推荐 GitHub Release 文件，支持中英文自动切换   | [Install][grar-github-raw] | [Install][grar-greasyfork] |
+| [优化 GitHub 评论显示 (TJ)][rgc-tj-github]     | 折叠机器人评论和重复内容，清理评论视图杂乱信息。基于 [bluwy][bluwy-original]   | [Install][rgc-tj-github-raw] | [Install][rgc-tj-greasyfork] |
 
 [bh-github]: https://github.com/tjx666/user-scripts/blob/main/block-hunter.user.js
 [bh-github-raw]: https://raw.githubusercontent.com/tjx666/user-scripts/main/block-hunter.user.js
@@ -17,10 +17,12 @@
 [rb-github]: https://github.com/tjx666/user-scripts/blob/main/refined-boss.user.js
 [rb-github-raw]: https://raw.githubusercontent.com/tjx666/user-scripts/main/refined-boss.user.js
 [rb-greasyfork]: https://greasyfork.org/zh-CN/scripts/489794-%E9%87%8D%E6%96%B0%E5%AE%9A%E4%B9%89boss%E7%9B%B4%E8%81%98
-[gsr-github]: https://github.com/tjx666/user-scripts/blob/main/github-release-assets-recommend.user.js
-[gsr-github-raw]: https://raw.githubusercontent.com/tjx666/user-scripts/main/github-release-assets-recommend.user.js
-[rgc-github]: https://github.com/tjx666/user-scripts/blob/main/refined-gitHub-comments-tj.user.js
-[rgc-github-raw]: https://raw.githubusercontent.com/tjx666/user-scripts/main/refined-gitHub-comments-tj.user.js
+[grar-github]: https://github.com/tjx666/user-scripts/blob/main/github-release-assets-recommend.user.js
+[grar-github-raw]: https://raw.githubusercontent.com/tjx666/user-scripts/main/github-release-assets-recommend.user.js
+[rgc-tj-github]: https://github.com/tjx666/user-scripts/blob/main/refined-gitHub-comments-tj.user.js
+[rgc-tj-github-raw]: https://raw.githubusercontent.com/tjx666/user-scripts/main/refined-gitHub-comments-tj.user.js
+[grar-greasyfork]: https://update.greasyfork.org/scripts/548506/github-release-assets-recommend.user.js
+[rgc-tj-greasyfork]: https://update.greasyfork.org/scripts/548507/Refined%20GitHub%20Comments%20%28TJ%29.user.js
 [bluwy-original]: https://github.com/bluwy/refined-github-comments
 
 ## 致谢
