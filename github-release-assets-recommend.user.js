@@ -1,14 +1,14 @@
 // ==UserScript==
-// @name         GitHub Smart Release Downloads
-// @namespace    https://github.com/yutengjing/user-scripts
+// @name         github-release-assets-recommend
+// @namespace    https://github.com/tjx666/user-scripts
 // @version      0.5.0
 // @description  Highlights compatible assets in GitHub release pages based on your platform (auto language detection)
 // @author       yutengjing
 // @match        https://github.com/*/releases/tag/*
 // @match        https://github.com/*/releases/latest
 // @grant        none
-// @homepageURL  https://github.com/yutengjing/user-scripts
-// @supportURL   https://github.com/yutengjing/user-scripts/issues
+// @homepageURL  https://github.com/tjx666/user-scripts
+// @supportURL   https://github.com/tjx666/user-scripts/issues
 // ==/UserScript==
 
 (function () {
