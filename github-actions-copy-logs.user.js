@@ -1,37 +1,45 @@
 // ==UserScript==
-// @name         GitHub Actions: Copy Step Logs on Hover
+// @name         GitHub Actions Copy Logs
 // @namespace    https://github.com/yutengjing/user-scripts
-// @version      0.3.0
+// @version      0.4.0
 // @description  Copy GitHub Actions step logs: hover header to show icon; click expands step, progressively scrolls to render all lines, then copies. Includes debug logs.
 // @author       JingGe helper
 // @match        https://github.com/*/*/actions/runs/*/job/*
 // @match        https://github.com/*/*/commit/*/checks/*
 // @grant        GM_setClipboard
 // @run-at       document-idle
+// @noframes
 // ==/UserScript==
 
 /*
   GitHub UI notes:
-  - Each step root: <check-step ... data-conclusion="failure" ...>
+  - Each step root: <check-step ... data-conclusion="..." ...>
   - Step header:    summary.CheckStep-header
   - Logs container: .js-checks-log-display-container
   - Log line text:  .js-check-step-line .js-check-line-content
 
   Behavior:
   - Inject a small Copy button inside step header; only visible on header :hover/:focus-within
-  - Target failed steps by default (data-conclusion="failure") to reduce clutter
-  - On click: prevent summary toggle; ensure details open; wait a short time; collect visible log lines; copy
+  - Works for all steps (success/failure)
+  - On click: prevent summary toggle; expand → stabilize by repeated scrollIntoView → collect log lines → copy
 */
 
 (function () {
     'use strict';
 
     // ===== Debug utilities (set DEBUG = true to enable console logs) =====
-    const DEBUG = true;
+    const DEBUG = false; // set true to enable console logs
     const LOG_PREFIX = '[GH Actions Copy]';
     function log(...args) {
         if (DEBUG) console.log(LOG_PREFIX, ...args);
     }
+
+    // Tunables
+    const CONFIG = {
+        STABLE_THRESHOLD: 10, // times of no new lines before stopping
+        LOOP_DELAY_MS: 90, // delay between scroll attempts
+        MAX_LOOPS: 400, // hard stop guard
+    };
 
     const SELECTORS = {
         // Apply to all steps (success, failure, etc.)
@@ -54,6 +62,7 @@
     }
 
     function injectStyle() {
+        if (document.head.querySelector('style[data-ghac]')) return; // avoid duplicate styles on Turbo
         const css = `
       /* Inline small icon placed before time; only visible on hover */
       .ghac-copy-btn{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin-right:8px;border-radius:6px;border:1px solid transparent;color:var(--fgColor-muted,#57606a);background:transparent;cursor:pointer;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s ease}
@@ -67,6 +76,8 @@
         style.textContent = css;
         document.head.appendChild(style);
     }
+
+    const busySteps = new WeakSet();
 
     function scanAndEnhance(root = document) {
         const steps = root.querySelectorAll(SELECTORS.stepRoot);
@@ -120,7 +131,13 @@
             async (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                const ok = await copyStepLogs(stepEl);
+                if (busySteps.has(stepEl)) {
+                    log('Skip click: step is busy');
+                    return;
+                }
+                busySteps.add(stepEl);
+                const ok = await copyStepLogs(stepEl).catch(() => false);
+                busySteps.delete(stepEl);
                 toast(ok ? 'Copied step logs ✅' : 'Copy failed ❌');
             },
             { capture: true },
@@ -176,7 +193,7 @@
         return ok;
     }
 
-  // (removed) Legacy progressive scroll collector
+    // (removed) Legacy progressive scroll collector
 
     function collectAllCurrentlyRenderedLines(stepEl) {
         const map = new Map();
@@ -195,7 +212,7 @@
         const container = stepEl.querySelector(SELECTORS.logsContainer);
         if (!container) return;
 
-    const initialNext = getNextStep(stepEl);
+        const initialNext = getNextStep(stepEl);
 
         let stable = 0;
         let lastCount = 0;
@@ -234,7 +251,7 @@
             nextStep: nextNum,
             hasNext: !!initialNext,
         });
-        while (loops < 400) {
+        while (loops < CONFIG.MAX_LOOPS) {
             loops++;
             // Jump scroll: bring next step (or end) into view fast
             const nextStep = getNextStep(stepEl);
@@ -251,7 +268,7 @@
                 }
             }
 
-            await delay(80);
+            await delay(CONFIG.LOOP_DELAY_MS);
 
             const { count, max } = readMetrics();
             const nextNow = getNextStep(stepEl);
@@ -276,7 +293,7 @@
                 stable++;
             }
 
-            if (stable >= 10) {
+            if (stable >= CONFIG.STABLE_THRESHOLD) {
                 log('Stabilize done', { loops, finalCount: lastCount, finalMax: lastMax });
                 break;
             }
@@ -285,7 +302,7 @@
         mo.disconnect();
     }
 
-  // (helpers removed: getScrollRoot/getScrollTop/scrollToY/yOfElementInScroll)
+    // (helpers removed: getScrollRoot/getScrollTop/scrollToY/yOfElementInScroll)
 
     function getNextStep(stepEl) {
         if (!(stepEl instanceof Element)) return null;

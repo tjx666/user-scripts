@@ -4,12 +4,13 @@
 
 ## 脚本列表
 
-| 脚本名                                        | 描述                                                                           | 从 GitHub 安装            | 从 GreasyFork 安装       |
-| --------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------- | ------------------------ |
-| [屏蔽 Boss 直聘猎头岗位][bh-github]           | 可以在`隐私保护` -> `屏蔽职位`里面设置不显示猎头岗位，但是有时候发现设置不生效 | [Install][bh-github-raw]  | [Install][bh-greasyfork] |
-| [重新定义 Boss 直聘][rb-github]               | 显示岗位最后修改时间，屏蔽已沟通过，不活跃的, 以及外包岗位                     | [Install][rb-github-raw]  | [Install][rb-greasyfork] |
-| [github-release-assets-recommend][grar-github] | 基于用户平台（操作系统+架构）智能推荐 GitHub Release 文件，支持中英文自动切换   | [Install][grar-github-raw] | [Install][grar-greasyfork] |
-| [优化 GitHub 评论显示 (TJ)][rgc-tj-github]     | 折叠机器人评论和重复内容，清理评论视图杂乱信息。基于 [bluwy][bluwy-original]   | [Install][rgc-tj-github-raw] | [Install][rgc-tj-greasyfork] |
+| 脚本名                                         | 描述                                                                             | 从 GitHub 安装               | 从 GreasyFork 安装           |
+| ---------------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------- | ---------------------------- |
+| [屏蔽 Boss 直聘猎头岗位][bh-github]            | 可以在`隐私保护` -> `屏蔽职位`里面设置不显示猎头岗位，但是有时候发现设置不生效   | [Install][bh-github-raw]     | [Install][bh-greasyfork]     |
+| [重新定义 Boss 直聘][rb-github]                | 显示岗位最后修改时间，屏蔽已沟通过，不活跃的, 以及外包岗位                       | [Install][rb-github-raw]     | [Install][rb-greasyfork]     |
+| [github-release-assets-recommend][grar-github] | 基于用户平台（操作系统+架构）智能推荐 GitHub Release 文件，支持中英文自动切换    | [Install][grar-github-raw]   | [Install][grar-greasyfork]   |
+| [GitHub Actions 步骤日志复制][gacsl-github]    | 在 Actions Job 页面 hover 步骤标题显示复制按钮，自动展开并滚动加载完整日志后复制 | [Install][gacsl-github-raw]  | —                            |
+| [优化 GitHub 评论显示 (TJ)][rgc-tj-github]     | 折叠机器人评论和重复内容，清理评论视图杂乱信息。基于 [bluwy][bluwy-original]     | [Install][rgc-tj-github-raw] | [Install][rgc-tj-greasyfork] |
 
 [bh-github]: https://github.com/tjx666/user-scripts/blob/main/block-hunter.user.js
 [bh-github-raw]: https://raw.githubusercontent.com/tjx666/user-scripts/main/block-hunter.user.js
@@ -24,6 +25,8 @@
 [grar-greasyfork]: https://update.greasyfork.org/scripts/548506/github-release-assets-recommend.user.js
 [rgc-tj-greasyfork]: https://update.greasyfork.org/scripts/548507/Refined%20GitHub%20Comments%20%28TJ%29.user.js
 [bluwy-original]: https://github.com/bluwy/refined-github-comments
+[gacsl-github]: https://github.com/tjx666/user-scripts/blob/main/github-actions-copy-logs.user.js
+[gacsl-github-raw]: https://raw.githubusercontent.com/tjx666/user-scripts/main/github-actions-copy-logs.user.js
 
 ## 致谢
 
