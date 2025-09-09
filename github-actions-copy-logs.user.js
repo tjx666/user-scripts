@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub Actions Copy Logs
 // @namespace    https://github.com/yutengjing/user-scripts
-// @version      0.4.0
+// @version      0.4.1
 // @description  Copy GitHub Actions step logs: hover header to show icon; click expands step, progressively scrolls to render all lines, then copies. Includes debug logs.
 // @author       JingGe helper
 // @match        https://github.com/*/*/actions/runs/*/job/*
@@ -65,8 +65,8 @@
         if (document.head.querySelector('style[data-ghac]')) return; // avoid duplicate styles on Turbo
         const css = `
       /* Inline small icon placed before time; only visible on hover */
-      .ghac-copy-btn{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin-right:8px;border-radius:6px;border:1px solid transparent;color:var(--fgColor-muted,#57606a);background:transparent;cursor:pointer;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s ease}
-      .ghac-copy-btn:hover{background:var(--control-transparent-bgColor-hover,rgba(175,184,193,0.2))}
+      .ghac-copy-btn{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;padding:0;margin-right:8px;border-radius:3px;border:1px solid transparent;color:var(--fgColor-muted,#57606a);background:transparent;cursor:pointer;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s ease}
+      .ghac-copy-btn:hover{background:var(--control-transparent-bgColor-hover,rgba(175,184,193,0.2));box-shadow:0 0 0 5px var(--control-transparent-bgColor-hover,rgba(175,184,193,0.1))}
       summary.CheckStep-header:hover .ghac-copy-btn,summary.CheckStep-header:focus-within .ghac-copy-btn{opacity:1;visibility:visible;pointer-events:auto}
       .ghac-copy-btn svg{width:16px;height:16px;fill:currentColor}
       .ghac-toast{position:fixed;z-index:9999;left:50%;bottom:24px;transform:translateX(-50%);background:var(--overlay-bgColor,rgba(27,31,36,0.9));color:#fff;padding:8px 12px;border-radius:6px;font-size:12px;box-shadow:0 8px 24px rgba(140,149,159,0.2)}
