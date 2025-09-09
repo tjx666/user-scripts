@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         github-release-assets-recommend
 // @namespace    https://github.com/tjx666/user-scripts
-// @version      0.5.0
+// @version      0.5.1
 // @description  Highlights compatible assets in GitHub release pages based on your platform (auto language detection)
 // @author       yutengjing
 // @match        https://github.com/*/releases/tag/*
@@ -19,7 +19,7 @@
     /**
      * 调试开关，设为 true 启用日志输出
      */
-    const DEBUG = false;
+    const DEBUG = true;
 
     /**
      * 语言检测 - 支持中文和英文
@@ -54,6 +54,7 @@
      * 优先级分数配置
      */
     const PRIORITY = {
+        PREFERRED_FORMAT: 250, // OS + 架构 + 首选格式完全匹配
         PERFECT_MATCH: 200, // OS + 架构完全匹配
         OS_MATCH: 100, // 仅OS匹配
         ARCH_MATCH: 50, // 仅架构匹配
@@ -68,6 +69,15 @@
         macos: ['.dmg', '.pkg', '.zip'],
         windows: ['.exe', '.msi', '.zip'],
         linux: ['.AppImage', '.deb', '.rpm', '.tar.gz', '.snap', '.flatpak', '.zip'],
+    };
+
+    /**
+     * 各平台首选格式配置
+     */
+    const PREFERRED_EXTENSIONS = {
+        macos: ['.dmg', '.pkg'],
+        windows: ['.exe', '.msi'],
+        linux: ['.AppImage', '.deb', '.rpm'],
     };
 
     /**
@@ -364,10 +374,19 @@
             }
         }
 
+        // 检查是否为首选格式
+        const isPreferredFormat = PREFERRED_EXTENSIONS[os] && 
+            PREFERRED_EXTENSIONS[os].some((ext) => name.endsWith(ext));
+
         // 优先级计算
         if (osMatch && archMatch) {
-            // 完全匹配：推荐
-            return PRIORITY.PERFECT_MATCH;
+            if (isPreferredFormat) {
+                // 完全匹配 + 首选格式：最高优先级
+                return PRIORITY.PREFERRED_FORMAT;
+            } else {
+                // 完全匹配但非首选格式：推荐
+                return PRIORITY.PERFECT_MATCH;
+            }
         } else if (osMatch && !archMatch) {
             // 操作系统匹配但架构不匹配：对于苹果芯片不显示标签
             if (os === 'macos' && arch === 'arm64') {
