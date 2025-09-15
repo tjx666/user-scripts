@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/tjx666/user-scripts
 // @supportURL   https://github.com/tjx666/user-scripts/issues
 // @namespace    https://github.com/tjx666/user-scripts
-// @version      0.4.2
+// @version      0.4.3
 // @description  Remove clutter in the comments view
 // @author       YuTengjing
 // @match        https://github.com/*/issues/*
@@ -22,7 +22,7 @@ const authorsToMinimize = [
     'netlify',
     // 'vercel',
     'pkg-pr-new',
-    // 'codecov',
+    'codecov',
     'astrobot-houston',
     'codspeed-hq',
     'lobehubbot',

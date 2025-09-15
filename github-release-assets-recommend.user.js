@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         github-release-assets-recommend
 // @namespace    https://github.com/tjx666/user-scripts
-// @version      0.5.1
+// @version      0.5.3
 // @description  Highlights compatible assets in GitHub release pages based on your platform (auto language detection)
 // @author       yutengjing
 // @match        https://github.com/*/releases/tag/*
@@ -88,6 +88,15 @@
         arm32: ['arm32', 'armv7', 'armhf'],
         x64: ['x64', 'x86_64', 'amd64', 'intel'],
         x86: ['x86', 'i386', '386'],
+    };
+
+    /**
+     * 平台标识符配置 - 用于识别文件的目标平台
+     */
+    const PLATFORM_IDENTIFIERS = {
+        macos: ['apple', 'darwin', 'macos', 'osx', 'mac'],
+        windows: ['windows', 'win32', 'win64', 'msvc', 'mingw'],
+        linux: ['linux', 'gnu', 'musl', 'ubuntu', 'debian', 'fedora', 'centos'],
     };
 
     /**
@@ -356,11 +365,29 @@
             return PRIORITY.AUXILIARY_FILE;
         }
 
+        // 检测文件的目标平台
+        let filePlatform = null;
+        for (const [platform, keywords] of Object.entries(PLATFORM_IDENTIFIERS)) {
+            if (keywords.some((keyword) => name.includes(keyword))) {
+                filePlatform = platform;
+                break;
+            }
+        }
+
+        // 如果文件明确属于其他平台，直接排除
+        if (filePlatform && filePlatform !== os) {
+            log(`File ${filename} is for ${filePlatform}, excluding from ${os}`);
+            return -Infinity;
+        }
+
         let osMatch = false;
         let archMatch = false;
 
-        // 检查操作系统匹配
-        if (EXTENSIONS[os] && EXTENSIONS[os].some((ext) => name.endsWith(ext))) {
+        // 如果文件有明确的平台标识且匹配当前平台，认为是OS匹配
+        if (filePlatform && filePlatform === os) {
+            osMatch = true;
+        } else if (!filePlatform && EXTENSIONS[os] && EXTENSIONS[os].some((ext) => name.endsWith(ext))) {
+            // 只有在没有平台标识时，才检查扩展名
             osMatch = true;
         }
 
